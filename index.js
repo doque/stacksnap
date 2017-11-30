@@ -5,9 +5,8 @@ require('dotenv').config();
 const download = require('download');
 const path = require('path');
 const BrowserStack = require('browserstack');
-const { Spinner } = require('cli-spinner');
-const browsers = require('./browsers.json');
 
+const browsers = require('./browsers.json');
 const DIRECTORY = path.join(__dirname, 'screenshots');
 
 const client = BrowserStack.createScreenshotClient({
@@ -15,45 +14,50 @@ const client = BrowserStack.createScreenshotClient({
   password: process.env.PASSWORD
 });
 
-client.generateScreenshots(
-  {
-    url: 'https://www.google.com',
-    browsers
-  },
-  (jobError, job) => {
-    if (jobError) {
-      console.error(jobError);
-    } else {
-      const { job_id: id, screenshots, wait_time: waitTime } = job;
-      console.info(
-        `generating ${screenshots.length} screenshots with job_id ${id}`
-      );
+const urls = ['https://www.google.com', 'https://www.bing.com'];
 
-      const spinner = new Spinner('%s waiting for browserstack')
-        .setSpinnerString('⢹⢺⢼⣸⣇⡧⡗⡏')
-        .start();
+console.log(`starting for ${urls.length} URLs`);
 
-      const timer = setInterval(() => {
-        client.getJob(id, (err, { state, screenshots }) => {
-          if (err) {
-            console.error(err);
-          } else {
-            if (state === 'done') {
-              const downloadDirectory = path.join(DIRECTORY, id);
+urls.forEach(url => {
+  client.generateScreenshots(
+    {
+      url,
+      browsers
+    },
+    (jobError, job) => {
+      if (jobError) {
+        console.error(jobError);
+      } else {
+        const { job_id: id, screenshots, wait_time: waitTime } = job;
+        const downloadDirectory = path.join(DIRECTORY, id);
 
-              screenshots.map(({ image_url }) => {
-                download(image_url, downloadDirectory);
-              });
+        console.info(
+          `generating ${screenshots.length} screenshot${
+            screenshots.length === 1 ? '' : 's'
+          } for ${url} with job_id ${id}`
+        );
 
-              spinner.stop(true);
-              console.info(
-                `Download to \`${path.basename(downloadDirectory)}\` complete.`
-              );
-              clearInterval(timer);
+        const timer = setInterval(() => {
+          client.getJob(id, (err, { state, screenshots }) => {
+            if (err) {
+              console.error(err);
+            } else {
+              if (state === 'done') {
+                screenshots.map(({ image_url }) => {
+                  download(image_url, downloadDirectory);
+                });
+
+                console.info(
+                  `Downloaded screenshots for ${url} to ${path.basename(
+                    downloadDirectory
+                  )}.`
+                );
+                clearInterval(timer);
+              }
             }
-          }
-        });
-      }, waitTime * 1000);
+          });
+        }, waitTime * 1000);
+      }
     }
-  }
-);
+  );
+});

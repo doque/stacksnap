@@ -1,16 +1,18 @@
-# Screenshot Download
+# StackSnap 📸 Screenshot Downloader
 
-Generate and download 📸 of a websiteusing Browserstack.io.
+Generate and download screenshots of a website using Browserstack's API.
 
-Create an `.env` file with Browserstack API credentials
+First, create an `.env` file with Browserstack API credentials
 
 ```sh
 USERNAME=user
 PASSWORD=password
 ```
 
-Images are downloaded to `<working directory>/<ISO timestamp>`.
+Run the script using
 
 ```sh
 node index.js
 ```
+
+Images are downloaded to `<working directory>/<job id>`.
